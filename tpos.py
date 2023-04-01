@@ -13,11 +13,12 @@ class Tree(NamedTuple):
     y: int
     b: float
     b_ca: float
+
 class Point(NamedTuple):
     x: int
     y: int
 
-if __name__ == "__main__":
+def read_tree_file():
     locale.setlocale(locale.LC_NUMERIC, 'sv_SE')
     forest = []
     with open('Tree position.csv', newline='') as csvfile:
@@ -36,40 +37,54 @@ if __name__ == "__main__":
                 locale.atof(line[6]),
                 locale.atof(line[7])
             ))
-    print("How many sample points?", end=' ')
-    sample_n = int(input())
+    locale.setlocale(locale.LC_NUMERIC, '')
+    return forest
 
-    print("What radius?", end=' ')
-    radius = int(input())
-
-    print()
+def generate_points(n, forest, radius):
     min_x = min(forest, key=lambda t: t.x).x + radius
     max_x = max(forest, key=lambda t: t.x).x - radius
     min_y = min(forest, key=lambda t: t.y).y + radius
     max_y = max(forest, key=lambda t: t.y).y - radius
     points = []
-    for _ in range(sample_n):
+    for _ in range(n):
         x = random.randint(min_x, max_x)
         y = random.randint(min_y, max_y)
         points.append(Point(x, y))
+    return points
 
-    match = [[] for _ in points]
+def check_tree_near_sample(points, forest, radius):
+    matches = [[] for _ in points]
     for t in forest:
-        for i in range(sample_n):
-            p = points[i]
+        for p, match in zip(points, matches):
             x_diff = abs(t.x - p.x)
             y_diff = abs(t.y - p.y)
             d = math.hypot(x_diff, y_diff)
             if d <= radius:
-                match[i].append(t)
+                match.append(t)
+    return matches
 
-    empty = []
-    for i in range(sample_n):
-        if len(match[i]) != 0:
+def print_results(points, matches):
+    for i, (p, ms) in enumerate(zip(points, matches)):
+        if len(ms) != 0:
             print()
 
-        p = points[i]
         print(f"Sample point {i} at x: {p.x:n}, y: {p.y:n}")
-        for m in match[i]:
+        for m in ms:
             print(f"   {m.id} at ({m.x:n}, {m.y:n})")
 
+def main():
+    forest = read_tree_file()
+    print("How many sample points?", end=' ')
+    sample_n = int(input())
+
+    print("What radius?", end=' ')
+    radius = int(input())
+    print()
+
+    points = generate_points(sample_n, forest, radius)
+    matches = check_tree_near_sample(points, forest, radius)
+
+    print_results(points, matches)
+
+if __name__ == "__main__":
+    main()
